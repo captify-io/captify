@@ -302,28 +302,28 @@ export default function ProjectOverviewPage() {
     setPageContext({
       title: project?.name || 'Loading...',
       hideMainMenu: true,
-      onClose: () => router.push('/project'),
+      onClose: () => router.push('/workspace/projects'),
       navButtons: [
         {
           id: 'overview',
           label: 'Overview',
           icon: ClipboardList,
           isActive: true,
-          onClick: () => router.push(`/project/${projectId}/overview`),
+          onClick: () => router.push(`/workspace/projects/${projectId}/overview`),
         },
         {
           id: 'activity',
           label: 'Activity',
           icon: MessageSquare,
           isActive: false,
-          onClick: () => router.push(`/project/${projectId}/activity`),
+          onClick: () => router.push(`/workspace/projects/${projectId}/activity`),
         },
         {
           id: 'issues',
           label: 'Issues',
           icon: CheckSquare2,
           isActive: false,
-          onClick: () => router.push(`/project/${projectId}/issues`),
+          onClick: () => router.push(`/workspace/projects/${projectId}/issues`),
         },
       ],
     });

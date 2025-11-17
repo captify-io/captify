@@ -8,7 +8,7 @@ import { apiClient } from "@captify-io/base";
 import { ClipboardList, MessageSquare, CheckSquare2, Users } from "lucide-react";
 import type { Project } from "@captify-io/base/types";
 
-export default function ProjectTeamPage() {
+export default function ProjectActivityPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.projectId as string;
@@ -48,28 +48,28 @@ export default function ProjectTeamPage() {
     setPageContext({
       title: project?.name || 'Loading...',
       hideMainMenu: true,
-      onClose: () => router.push('/project'),
+      onClose: () => router.push('/workspace/projects'),
       navButtons: [
         {
           id: 'overview',
           label: 'Overview',
           icon: ClipboardList,
           isActive: false,
-          onClick: () => router.push(`/project/${projectId}/overview`),
+          onClick: () => router.push(`/workspace/projects/${projectId}/overview`),
         },
         {
           id: 'activity',
           label: 'Activity',
           icon: MessageSquare,
-          isActive: false,
-          onClick: () => router.push(`/project/${projectId}/activity`),
+          isActive: true,
+          onClick: () => router.push(`/workspace/projects/${projectId}/activity`),
         },
         {
           id: 'issues',
           label: 'Issues',
           icon: CheckSquare2,
           isActive: false,
-          onClick: () => router.push(`/project/${projectId}/issues`),
+          onClick: () => router.push(`/workspace/projects/${projectId}/issues`),
         },
       ],
     });
@@ -82,8 +82,8 @@ export default function ProjectTeamPage() {
 
   return (
     <div className="flex flex-col h-full p-6">
-      <h1 className="text-2xl font-bold mb-4">Project Team</h1>
-      <p className="text-muted-foreground">No team members yet. This is where project team members will appear.</p>
+      <h1 className="text-2xl font-bold mb-4">Project Activity</h1>
+      <p className="text-muted-foreground">No activity yet. This is where project activity will appear.</p>
     </div>
   );
 }

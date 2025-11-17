@@ -158,45 +158,45 @@ export default async function DemoHubPage() {
   ];
 
   return (
-    <div className="container mx-auto p-8 space-y-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-3">Captify Platform Demo Hub</h1>
-        <p className="text-lg text-muted-foreground">
+    <div className="container mx-auto p-8 space-y-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">Captify Platform Demo Hub</h1>
+        <p className="text-muted-foreground">
           Explore all the features and capabilities of the Captify platform through interactive
           demonstrations
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {demos.map((demo) => {
           const Icon = demo.icon;
           return (
             <Link key={demo.href} href={demo.href}>
-              <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer h-full">
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="p-3 rounded-lg bg-primary/10">
-                    <Icon className="w-6 h-6 text-primary" />
+              <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer h-full">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
+                    <Icon className="w-5 h-5 text-primary" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h2 className="text-xl font-semibold">{demo.title}</h2>
-                      <span className={`text-xs px-2 py-1 rounded-full ${demo.statusColor}`}>
+                      <h2 className="text-lg font-semibold truncate">{demo.title}</h2>
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${demo.statusColor}`}>
                         {demo.status}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground font-mono">{demo.package}</p>
+                    <p className="text-xs text-muted-foreground font-mono truncate">{demo.package}</p>
                   </div>
                 </div>
 
-                <p className="text-muted-foreground mb-4">{demo.description}</p>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{demo.description}</p>
 
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Key Features:</h3>
-                  <ul className="grid grid-cols-2 gap-1 text-sm text-muted-foreground">
+                <div>
+                  <h3 className="text-xs font-semibold mb-1.5">Key Features:</h3>
+                  <ul className="grid grid-cols-1 gap-0.5 text-xs text-muted-foreground">
                     {demo.features.map((feature) => (
                       <li key={feature} className="flex items-center gap-1">
                         <span className="text-primary">•</span>
-                        {feature}
+                        <span className="truncate">{feature}</span>
                       </li>
                     ))}
                   </ul>
@@ -207,8 +207,8 @@ export default async function DemoHubPage() {
         })}
       </div>
 
-      <Card className="p-6 bg-muted/50">
-        <h2 className="text-xl font-semibold mb-3">About These Demos</h2>
+      <Card className="p-4 bg-muted/50">
+        <h2 className="text-lg font-semibold mb-2">About These Demos</h2>
         <div className="space-y-2 text-sm text-muted-foreground">
           <p>
             Each demo showcases a different aspect of the Captify platform, from AI-powered agents
@@ -218,7 +218,7 @@ export default async function DemoHubPage() {
             All demos are fully interactive and use live data from the platform. You can explore
             features, test functionality, and see how different components work together.
           </p>
-          <p className="font-semibold text-foreground mt-4">
+          <p className="font-semibold text-foreground mt-3">
             Click any card above to explore a demo →
           </p>
         </div>

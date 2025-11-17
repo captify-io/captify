@@ -22,9 +22,9 @@ export const config: CaptifyLayoutConfig = {
       order: 1,
     },
     {
-      id: "projects",
-      label: "Projects",
-      href: "/workspace/initiatives",
+      id: "workspace",
+      label: "Workspace",
+      href: "/workspace/projects",
       icon: "FolderKanban",
       order: 2,
       children: [
@@ -34,6 +34,13 @@ export const config: CaptifyLayoutConfig = {
           href: "/workspace/initiatives",
           icon: "Target",
           order: 1,
+        },
+        {
+          id: "projects",
+          label: "Projects",
+          href: "/workspace/projects",
+          icon: "FolderKanban",
+          order: 2,
           default: true,
         },
         {
@@ -41,14 +48,14 @@ export const config: CaptifyLayoutConfig = {
           label: "Issues",
           href: "/workspace/issues",
           icon: "ListTodo",
-          order: 2,
+          order: 3,
         },
         {
           id: "team",
           label: "Team",
           href: "/workspace/teams",
           icon: "Users",
-          order: 3,
+          order: 4,
         },
       ],
       detailChildren: [

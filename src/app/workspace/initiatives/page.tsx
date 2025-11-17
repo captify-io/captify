@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useCaptify } from "@captify-io/base/layout";
-import { Loader2, Rocket, Plus } from "lucide-react";
-import { Button } from "@captify-io/base/ui";
+import { useCaptify } from "@captify-io/base";
+import { apiClient } from "@captify-io/base";
+import { Button, Badge, DataTable } from "@captify-io/base/ui";
+import { Target, Plus, Loader2 } from "lucide-react";
+import type { ColumnDef } from "@captify-io/base/ui";
 
 interface Initiative {
   id: string;
@@ -14,160 +16,181 @@ interface Initiative {
   color?: string;
   status: string;
   progress?: number;
-  startDate?: string;
+  ownerId?: string;
   targetDate?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function InitiativesPage() {
   const router = useRouter();
   const { workspace } = useCaptify();
+
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (workspace?.id) {
-      loadInitiatives();
-    }
+    if (!workspace?.id) return;
+
+    const fetchInitiatives = async () => {
+      setLoading(true);
+      try {
+        const response = await apiClient.run({
+          app: 'ontology',
+          operation: 'queryItems',
+          data: {
+            type: 'workspace-initiative',
+            keyCondition: {
+              workspaceId: workspace.id,
+            },
+            index: 'workspaceId-status-index',
+          },
+        });
+
+        if (response.success && response.data?.items) {
+          setInitiatives(response.data.items as Initiative[]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch initiatives:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitiatives();
   }, [workspace?.id]);
 
-  async function loadInitiatives() {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/captify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          app: "ontology",
-          operation: "queryItems",
-          data: {
-            type: "workspace-initiative",
-            indexName: "workspaceId-index",
-            keyConditionExpression: "workspaceId = :workspaceId",
-            expressionAttributeValues: {
-              ":workspaceId": workspace?.id,
-            },
-          },
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        setInitiatives(result.data);
-      } else {
-        setError("Failed to load initiatives");
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to load initiatives");
-    } finally {
-      setLoading(false);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case 'planned':
+        return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+      case 'paused':
+        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+      case 'completed':
+        return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+      case 'cancelled':
+        return 'bg-red-500/10 text-red-500 border-red-500/20';
+      default:
+        return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
     }
-  }
+  };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-6 w-6 animate-spin mr-2" />
-        <span>Loading initiatives...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-full text-destructive">
-        {error}
-      </div>
-    );
-  }
+  const columns: ColumnDef<Initiative>[] = [
+    {
+      accessorKey: 'name',
+      header: 'Initiative',
+      cell: (initiative) => (
+        <div className="flex items-center gap-3">
+          {initiative.icon && (
+            <span className="text-2xl" style={{ color: initiative.color }}>
+              {initiative.icon}
+            </span>
+          )}
+          <div>
+            <div className="font-semibold">{initiative.name}</div>
+            {initiative.description && (
+              <div className="text-sm text-muted-foreground truncate max-w-md">
+                {initiative.description}
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      className: 'w-32',
+      cell: (initiative) => (
+        <Badge variant="outline" className={`capitalize ${getStatusColor(initiative.status)}`}>
+          {initiative.status}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: 'progress',
+      header: 'Progress',
+      className: 'w-40',
+      cell: (initiative) => (
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary transition-all"
+              style={{ width: `${initiative.progress || 0}%` }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground w-10 text-right">
+            {initiative.progress || 0}%
+          </span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'targetDate',
+      header: 'Target Date',
+      className: 'w-32',
+      cell: (initiative) => (
+        initiative.targetDate ? (
+          <span className="text-sm">
+            {new Date(initiative.targetDate).toLocaleDateString()}
+          </span>
+        ) : (
+          <span className="text-muted-foreground text-sm">—</span>
+        )
+      ),
+    },
+  ];
 
   return (
     <div className="container mx-auto p-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Initiatives</h1>
-          <p className="text-muted-foreground mt-1">
-            Strategic initiatives and their projects
-          </p>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <Target className="h-8 w-8 text-primary" />
+          <div>
+            <h1 className="text-4xl font-bold">Initiatives</h1>
+            <p className="text-muted-foreground">
+              Strategic objectives and key results for your workspace
+            </p>
+          </div>
         </div>
-        <Button onClick={() => router.push("/workspace/initiatives/new")}>
+        <Button onClick={() => {
+          // TODO: Open create initiative dialog
+          console.log('Create initiative');
+        }}>
           <Plus className="h-4 w-4 mr-2" />
           New Initiative
         </Button>
       </div>
 
-      {initiatives.length === 0 ? (
-        <div className="text-center py-12">
-          <Rocket className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No initiatives yet</h3>
+      {/* Initiatives List */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : initiatives.length === 0 ? (
+        <div className="text-center py-12 border rounded-lg">
+          <Target className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+          <h2 className="text-xl font-semibold mb-2">No initiatives yet</h2>
           <p className="text-muted-foreground mb-4">
-            Get started by creating your first initiative
+            Create your first initiative to organize projects around strategic goals
           </p>
-          <Button onClick={() => router.push("/workspace/initiatives/new")}>
+          <Button onClick={() => {
+            // TODO: Open create initiative dialog
+            console.log('Create initiative');
+          }}>
             <Plus className="h-4 w-4 mr-2" />
             Create Initiative
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {initiatives.map((initiative) => (
-            <button
-              key={initiative.id}
-              onClick={() => router.push(`/workspace/initiatives/${initiative.id}`)}
-              className="text-left p-6 border rounded-lg hover:border-primary transition-all hover:shadow-md"
-              style={{
-                borderLeftWidth: "4px",
-                borderLeftColor: initiative.color || "#6b7280",
-              }}
-            >
-              <div className="flex items-start gap-3 mb-3">
-                {initiative.icon && (
-                  <span className="text-2xl">{initiative.icon}</span>
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-lg truncate">
-                    {initiative.name}
-                  </h3>
-                  {initiative.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                      {initiative.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {initiative.progress !== undefined && (
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">{initiative.progress}%</span>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary transition-all"
-                      style={{ width: `${initiative.progress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
-                <span className="px-2 py-1 bg-muted rounded capitalize">
-                  {initiative.status}
-                </span>
-                {initiative.targetDate && (
-                  <span>
-                    Due {new Date(initiative.targetDate).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
+        <DataTable
+          columns={columns}
+          data={initiatives}
+          onRowClick={(initiative) => router.push(`/workspace/initiatives/${initiative.id}`)}
+        />
       )}
     </div>
   );

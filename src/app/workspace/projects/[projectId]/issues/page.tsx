@@ -105,28 +105,28 @@ export default function ProjectIssuesPage() {
     setPageContext({
       title: project?.name || 'Loading...',
       hideMainMenu: true,
-      onClose: () => router.push('/project'),
+      onClose: () => router.push('/workspace/projects'),
       navButtons: [
         {
           id: 'overview',
           label: 'Overview',
           icon: ClipboardList,
           isActive: false,
-          onClick: () => router.push(`/project/${projectId}/overview`),
+          onClick: () => router.push(`/workspace/projects/${projectId}/overview`),
         },
         {
           id: 'activity',
           label: 'Activity',
           icon: MessageSquare,
           isActive: false,
-          onClick: () => router.push(`/project/${projectId}/activity`),
+          onClick: () => router.push(`/workspace/projects/${projectId}/activity`),
         },
         {
           id: 'issues',
           label: 'Issues',
           icon: CheckSquare2,
           isActive: true,
-          onClick: () => router.push(`/project/${projectId}/issues`),
+          onClick: () => router.push(`/workspace/projects/${projectId}/issues`),
         },
       ],
     });
@@ -346,7 +346,7 @@ export default function ProjectIssuesPage() {
           <DataTable
             columns={columns}
             data={filteredIssues}
-            onRowClick={(issue) => router.push(`/issues/${issue.id}`)}
+            onRowClick={(issue) => router.push(`/workspace/issues/${issue.id}`)}
             className="h-full"
           />
         )}

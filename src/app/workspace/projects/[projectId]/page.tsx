@@ -10,7 +10,7 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     // Redirect to overview page
-    router.replace(`/project/${projectId}/overview`);
+    router.replace(`/workspace/projects/${projectId}/overview`);
   }, [projectId, router]);
 
   return null;

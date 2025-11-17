@@ -228,7 +228,7 @@ export default function InitiativeDetailPage() {
               <button
                 key={project.id}
                 onClick={() =>
-                  router.push(`/workspace/initiatives/${initiativeId}/projects/${project.id}`)
+                  router.push(`/workspace/projects/${project.id}`)
                 }
                 className="text-left p-4 border rounded-lg hover:border-primary transition-all hover:shadow-md"
                 style={{

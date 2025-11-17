@@ -17,7 +17,7 @@ export const config: CaptifyLayoutConfig = {
     {
       id: "insights",
       label: "Insights",
-      href: "/insights",
+      href: "/",
       icon: "BarChart3",
       order: 1,
     },

@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCaptify } from "@captify-io/base";
 import { apiClient } from "@captify-io/base";
-import { Button, Badge, DataTable } from "@captify-io/base/ui";
-import { FolderKanban, Plus, Loader2 } from "lucide-react";
+import { Badge, DataTable, PageLayout, DetailPanel } from "@captify-io/base/ui";
+import { Plus, Loader2 } from "lucide-react";
 import type { ColumnDef } from "@captify-io/base/ui";
 
 interface Project {
@@ -30,6 +30,7 @@ export default function ProjectsPage() {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   useEffect(() => {
     if (!workspace?.id) return;
@@ -173,54 +174,120 @@ export default function ProjectsPage() {
   ];
 
   return (
-    <div className="container mx-auto p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <FolderKanban className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-4xl font-bold">Projects</h1>
-            <p className="text-muted-foreground">
-              All projects across your workspace
-            </p>
-          </div>
-        </div>
-        <Button onClick={() => {
-          // TODO: Open create project dialog
-          console.log('Create project');
-        }}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Project
-        </Button>
-      </div>
+    <PageLayout
+      breadcrumbs={[
+        { label: "Workspace", href: "/workspace" },
+        { label: "Projects" }
+      ]}
+      actions={[
+        {
+          label: "New Project",
+          icon: Plus,
+          variant: "default",
+          onClick: () => {
+            // TODO: Open create project dialog
+            console.log('Create project');
+          }
+        }
+      ]}
+      detailPanel={
+        selectedProject ? (
+          <DetailPanel
+            title="Project Details"
+            onClose={() => setSelectedProject(null)}
+          >
+            <div className="space-y-6">
+              {/* Project Icon & Name */}
+              <div className="flex items-center gap-3">
+                {selectedProject.icon && (
+                  <span className="text-4xl" style={{ color: selectedProject.color }}>
+                    {selectedProject.icon}
+                  </span>
+                )}
+                <div>
+                  <h3 className="text-lg font-semibold">{selectedProject.name}</h3>
+                  {selectedProject.description && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {selectedProject.description}
+                    </p>
+                  )}
+                </div>
+              </div>
 
+              {/* Status & Health */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Status</span>
+                  <Badge variant="outline" className={`capitalize ${getStatusColor(selectedProject.status)}`}>
+                    {selectedProject.status}
+                  </Badge>
+                </div>
+                {selectedProject.health && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Health</span>
+                    <Badge variant="outline" className={`capitalize ${getHealthColor(selectedProject.health)}`}>
+                      {selectedProject.health.replace('-', ' ')}
+                    </Badge>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Progress</span>
+                  <span className="text-sm font-medium">{selectedProject.progress || 0}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${selectedProject.progress || 0}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Target Date */}
+              {selectedProject.targetDate && (
+                <div className="space-y-1">
+                  <span className="text-sm text-muted-foreground">Target Date</span>
+                  <p className="text-sm font-medium">
+                    {new Date(selectedProject.targetDate).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+
+              {/* Created/Updated */}
+              <div className="pt-6 border-t space-y-2 text-xs text-muted-foreground">
+                <div>Created {new Date(selectedProject.createdAt).toLocaleDateString()}</div>
+                <div>Updated {new Date(selectedProject.updatedAt).toLocaleDateString()}</div>
+              </div>
+            </div>
+          </DetailPanel>
+        ) : undefined
+      }
+      noPadding
+    >
       {/* Projects List */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center h-full">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : projects.length === 0 ? (
-        <div className="text-center py-12 border rounded-lg">
-          <FolderKanban className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">No projects yet</h2>
-          <p className="text-muted-foreground mb-4">
-            Create your first project to start tracking work and deliverables
-          </p>
-          <Button onClick={() => {
-            // TODO: Open create project dialog
-            console.log('Create project');
-          }}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Project
-          </Button>
+        <div className="flex items-center justify-center h-full p-8">
+          <div className="text-center max-w-md">
+            <h2 className="text-xl font-semibold mb-2">No projects yet</h2>
+            <p className="text-muted-foreground mb-6">
+              Create your first project to start tracking work and deliverables
+            </p>
+          </div>
         </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={projects}
-          onRowClick={(project) => router.push(`/workspace/projects/${project.id}`)}
-        />
+        <div className="h-full">
+          <DataTable
+            columns={columns}
+            data={projects}
+            onRowClick={(project) => {
+              setSelectedProject(project);
+            }}
+          />
+        </div>
       )}
-    </div>
+    </PageLayout>
   );
 }

@@ -9,7 +9,7 @@ import { Loader2, ClipboardList, MessageSquare, CheckSquare2, Users } from "luci
 import dynamic from "next/dynamic";
 import type { WorkspaceProject, IssueComment } from "@captify-io/workspace/types";
 import { ProjectProperties, ActivityFeed } from "@captify-io/workspace/client";
-import { createComment, listComments } from "@captify-io/workspace/server";
+import { apiClient } from "@captify-io/base";
 
 // Dynamically import Fabric to avoid SSR issues
 const ProseMirrorEditor = dynamic(
@@ -110,8 +110,23 @@ function CommentThread({ entityId, entityType, workspaceId }: CommentThreadProps
 
   async function loadComments() {
     try {
-      const data = await listComments(entityId);
-      setComments(data);
+      const response = await apiClient.run({
+        app: 'ontology',
+        operation: 'queryItems',
+        data: {
+          type: 'workspace-issue-comment',
+          keyCondition: {
+            issueId: entityId,
+          },
+          index: 'issueId-createdAt-index',
+          limit: 100,
+          sortAscending: true,
+        },
+      });
+
+      if (response.success && response.data?.items) {
+        setComments(response.data.items as IssueComment[]);
+      }
     } catch (err) {
       console.error("Failed to load comments:", err);
     }
@@ -123,16 +138,29 @@ function CommentThread({ entityId, entityType, workspaceId }: CommentThreadProps
 
       setSubmitting(true);
       try {
-        await createComment({
+        const comment = {
           issueId: entityId,
           userId: session.user.id,
           doc,
+          content: extractTextFromDoc(doc),
           isInternal: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        const response = await apiClient.run({
+          app: 'ontology',
+          operation: 'createItem',
+          data: {
+            type: 'workspace-issue-comment',
+            item: comment,
+          },
         });
 
-        // Reload comments
-        await loadComments();
-        setShowCommentEditor(false);
+        if (response.success) {
+          await loadComments();
+          setShowCommentEditor(false);
+        }
       } catch (err) {
         console.error("Failed to create comment:", err);
       } finally {
@@ -141,6 +169,23 @@ function CommentThread({ entityId, entityType, workspaceId }: CommentThreadProps
     },
     [entityId, session?.user?.id]
   );
+
+  // Helper to extract text from ProseMirror doc
+  function extractTextFromDoc(doc: any): string {
+    let text = '';
+    const traverse = (node: any) => {
+      if (node.type === 'text') {
+        text += node.text || '';
+      }
+      if (node.content && Array.isArray(node.content)) {
+        node.content.forEach(traverse);
+      }
+    };
+    if (doc?.content) {
+      traverse(doc);
+    }
+    return text.trim();
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

@@ -1,8 +1,24 @@
 {
   "name": "@captify-io/captify",
   "version": "1.0.0",
-  "private": true,
   "description": "Captify platform application",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/captify-io/captify.git"
+  },
+  "bugs": {
+    "url": "https://github.com/captify-io/captify/issues"
+  },
+  "homepage": "https://github.com/captify-io/captify#readme",
+  "keywords": [
+    "platform",
+    "nextjs",
+    "aws",
+    "authentication",
+    "workflow"
+  ],
+  "author": "Captify",
+  "license": "MIT",
   "scripts": {
     "dev": "node server.mjs",
     "build": "next build",

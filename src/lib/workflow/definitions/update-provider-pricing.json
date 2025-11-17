@@ -1,0 +1,207 @@
+{
+  "id": "update-provider-pricing",
+  "name": "Update Provider Pricing",
+  "description": "Automatically fetches and updates AI provider pricing from official APIs",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start",
+      "position": { "x": 100, "y": 100 },
+      "data": {
+        "label": "Start",
+        "config": {}
+      }
+    },
+    {
+      "id": "fetch-anthropic-pricing",
+      "type": "http",
+      "position": { "x": 100, "y": 200 },
+      "data": {
+        "label": "Fetch Anthropic Pricing",
+        "config": {
+          "url": "https://www.anthropic.com/api/pricing",
+          "method": "GET",
+          "headers": {},
+          "outputVariable": "anthropicPricing"
+        }
+      }
+    },
+    {
+      "id": "fetch-openai-pricing",
+      "type": "http",
+      "position": { "x": 300, "y": 200 },
+      "data": {
+        "label": "Fetch OpenAI Pricing",
+        "config": {
+          "url": "https://openai.com/api/pricing",
+          "method": "GET",
+          "headers": {},
+          "outputVariable": "openaiPricing"
+        }
+      }
+    },
+    {
+      "id": "fetch-bedrock-pricing",
+      "type": "http",
+      "position": { "x": 500, "y": 200 },
+      "data": {
+        "label": "Fetch Bedrock Pricing",
+        "config": {
+          "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/index.json",
+          "method": "GET",
+          "headers": {},
+          "outputVariable": "bedrockPricing"
+        }
+      }
+    },
+    {
+      "id": "transform-anthropic-pricing",
+      "type": "transform",
+      "position": { "x": 100, "y": 300 },
+      "data": {
+        "label": "Transform Anthropic Pricing",
+        "config": {
+          "transformType": "javascript",
+          "code": "const data = context.variables.anthropicPricing.data; return { provider: 'anthropic', models: data.models }",
+          "outputVariable": "anthropicTransformed"
+        }
+      }
+    },
+    {
+      "id": "transform-openai-pricing",
+      "type": "transform",
+      "position": { "x": 300, "y": 300 },
+      "data": {
+        "label": "Transform OpenAI Pricing",
+        "config": {
+          "transformType": "javascript",
+          "code": "const data = context.variables.openaiPricing.data; return { provider: 'openai', models: data.data }",
+          "outputVariable": "openaiTransformed"
+        }
+      }
+    },
+    {
+      "id": "transform-bedrock-pricing",
+      "type": "transform",
+      "position": { "x": 500, "y": 300 },
+      "data": {
+        "label": "Transform Bedrock Pricing",
+        "config": {
+          "transformType": "javascript",
+          "code": "const data = context.variables.bedrockPricing.data; const models = []; for (const [sku, details] of Object.entries(data.products || {})) { if (details.productFamily === 'Machine Learning') { models.push({ modelId: details.attributes?.servicecode, pricing: details.attributes }); } } return { provider: 'bedrock', models }",
+          "outputVariable": "bedrockTransformed"
+        }
+      }
+    },
+    {
+      "id": "loop-update-models",
+      "type": "loop",
+      "position": { "x": 300, "y": 400 },
+      "data": {
+        "label": "Update Each Model",
+        "config": {
+          "loopType": "forEach",
+          "array": "${[...anthropicTransformed.models, ...openaiTransformed.models, ...bedrockTransformed.models]}",
+          "itemVariable": "currentModel",
+          "indexVariable": "modelIndex"
+        }
+      }
+    },
+    {
+      "id": "update-model-in-db",
+      "type": "aws-service",
+      "position": { "x": 300, "y": 500 },
+      "data": {
+        "label": "Update Model Pricing",
+        "config": {
+          "service": "dynamodb",
+          "operation": "update",
+          "table": "core-provider-model",
+          "parameters": {
+            "Key": { "id": "${currentModel.id}" },
+            "UpdateExpression": "SET pricing = :pricing, updatedAt = :now",
+            "ExpressionAttributeValues": {
+              ":pricing": "${currentModel.pricing}",
+              ":now": "${Date.now()}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "log-completion",
+      "type": "llm",
+      "position": { "x": 300, "y": 600 },
+      "data": {
+        "label": "Log Completion",
+        "config": {
+          "provider": "anthropic",
+          "model": "claude-3-5-haiku-20241022",
+          "temperature": 0.1,
+          "prompt": "Generate a concise summary report of the pricing update. Updated ${modelIndex + 1} models across ${['Anthropic', 'OpenAI', 'Bedrock'].length} providers. Current timestamp: ${new Date().toISOString()}",
+          "outputVariable": "summaryReport"
+        }
+      }
+    },
+    {
+      "id": "send-notification",
+      "type": "aws-service",
+      "position": { "x": 300, "y": 700 },
+      "data": {
+        "label": "Send Notification",
+        "config": {
+          "service": "dynamodb",
+          "operation": "put",
+          "table": "core-notification",
+          "parameters": {
+            "Item": {
+              "id": "notif_${Date.now()}",
+              "userId": "system",
+              "type": "system",
+              "title": "Provider Pricing Updated",
+              "message": "${summaryReport}",
+              "status": "unread",
+              "createdAt": "${Date.now()}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "end",
+      "type": "end",
+      "position": { "x": 300, "y": 800 },
+      "data": {
+        "label": "End",
+        "config": {}
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "start", "target": "fetch-anthropic-pricing" },
+    { "id": "e2", "source": "start", "target": "fetch-openai-pricing" },
+    { "id": "e3", "source": "start", "target": "fetch-bedrock-pricing" },
+    { "id": "e4", "source": "fetch-anthropic-pricing", "target": "transform-anthropic-pricing" },
+    { "id": "e5", "source": "fetch-openai-pricing", "target": "transform-openai-pricing" },
+    { "id": "e6", "source": "fetch-bedrock-pricing", "target": "transform-bedrock-pricing" },
+    { "id": "e7", "source": "transform-anthropic-pricing", "target": "loop-update-models" },
+    { "id": "e8", "source": "transform-openai-pricing", "target": "loop-update-models" },
+    { "id": "e9", "source": "transform-bedrock-pricing", "target": "loop-update-models" },
+    { "id": "e10", "source": "loop-update-models", "target": "update-model-in-db" },
+    { "id": "e11", "source": "update-model-in-db", "target": "log-completion" },
+    { "id": "e12", "source": "log-completion", "target": "send-notification" },
+    { "id": "e13", "source": "send-notification", "target": "end" }
+  ],
+  "metadata": {
+    "createdAt": "2025-11-16T00:00:00Z",
+    "createdBy": "system",
+    "tags": ["automation", "pricing", "providers", "scheduled"],
+    "schedule": {
+      "enabled": true,
+      "cron": "0 0 * * 0",
+      "timezone": "America/New_York",
+      "description": "Run weekly on Sundays at midnight EST"
+    }
+  }
+}

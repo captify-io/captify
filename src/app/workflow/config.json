@@ -1,0 +1,32 @@
+{
+  "name": "Workflow",
+  "icon": "Workflow",
+  "description": "AI-powered workflow builder and execution",
+  "navigation": [
+    {
+      "title": "Overview",
+      "href": "/workflow",
+      "icon": "Home"
+    },
+    {
+      "title": "My Workflows",
+      "href": "/workflow/list",
+      "icon": "List"
+    },
+    {
+      "title": "Builder",
+      "href": "/workflow/builder",
+      "icon": "Workflow"
+    },
+    {
+      "title": "Patterns",
+      "href": "/workflow/patterns",
+      "icon": "Sparkles"
+    },
+    {
+      "title": "Executions",
+      "href": "/workflow/executions",
+      "icon": "PlayCircle"
+    }
+  ]
+}
